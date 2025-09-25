@@ -1,0 +1,19 @@
+---
+-  hosts: all
+   become: true
+   roles:
+      - role: nginxinc.nginx
+   post_tasks:
+      - name: Copy website content to nginx html directory
+        copy: src=./index.html dest=/usr/share/nginx/html/index.html mode=0644
+      - name : Allow all traffic on port 80
+        ufw:
+           rule: allow
+           port: '80'
+           proto: tcp
+      - name: Allow all trafic on ssh 22
+        ufw:
+           rule: allow
+           port: '22'
+           proto: tcp
+    
