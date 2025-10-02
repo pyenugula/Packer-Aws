@@ -1,0 +1,54 @@
+AMI Bake using : Packer + GitLab CI/CD + AWS CLI + Terraform
+
+Today’s shipping note: automated AMI baking with Packer, wired into GitLab CI/CD, and deployed to AWS with both AWS CLI and Terraform. 
+The goal: immutable builds, traceable deployments, and zero manual AMI copy-paste.
+
+What I set up
+
+	• Packer template to build a hardened AMI for EC2 [nginx installed].
+	
+	• GitLab pipeline with two stages: build-ami → deploy.
+	
+	• AMI ID automatically handed off between stages (no hardcoding).
+	
+
+Two deploy paths: quick test with AWS CLI, and infra-managed rollout with Terraform.
+
+
+Pipeline highlights: 
+
+	· Build: Run Packer, capture AMI ID from machine-readable logs, export as a pipeline variable.
+	
+	· Deploy (CLI): Launch an EC2 instance from the fresh AMI for smoke tests.
+	
+	· Deploy (Terraform): Pass AMI ID into Terraform to update Launch Templates/ASGs or standalone instances.
+
+GitLab CI/CD (concept)
+
+	· Stage 1 (Packer): bake AMI, emit AMI_ID.
+	
+	· Stage 2 (Deploy): consume AMI_ID and apply.
+
+
+AWS CLI path
+
+	Quick validation: run an instance from the new AMI in a sandbox VPC/subnet with least-privileged IAM.
+
+Terraform path
+
+	· Variables: var.ami (string), var.aws_region.
+	
+	· Apply: terraform apply -var="ami=${AMI_ID}" to update Launch Template/ASG or EC2
+	
+	
+Why this matters
+
+	· Immutable servers: bake once, run anywhere.
+	
+	· Repeatable releases: AMI as a versioned artifact.
+	
+	· Faster rollbacks: revert to a known-good AMI quickly.
+	
+	· Security: credentials in CI variables, not code; AMI hardened in the bake step.
+
+
